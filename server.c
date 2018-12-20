@@ -10,6 +10,8 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <dirent.h>
+
 
 #define BUFSIZE 1024
 #define SIZE 256
@@ -71,14 +73,7 @@ error_handling("bind() error");
 					strncpy(ID, message, str_len-1);
 					ID[str_len-1] = 0;
 					
-					
-
-					printf("-----------------------------------------------\n");
-					printf("%s님이 입장하셨습니다\n ",ID);
 					catdb(ID);
-					printf("\n-----------------------------------------------\n");
-
-					
 					 write(clnt_sock, message, str_len);
                      write(1, message, str_len);
 					printf("\n-----------------------------------------------\n");
@@ -99,13 +94,33 @@ void error_handling(char *message)
 
 void catdb(char *ID)
 {
+    int user = 0;
     char buffer[SIZE];
 	char buffer2[SIZE];
 	char buffer3[SIZE];
 	char dbpath[SIZE]= "./dbpath/";;
 	strcat(dbpath,ID);
+    
+    DIR *dir;
+    struct dirent *ent;
+    dir = opendir ("./dbpath/");
+    if (dir != NULL) {
+        while ((ent = readdir (dir)) != NULL) {
+//            printf ("%s\n", ent->d_name);
+            if(!strcmp(ID,ent->d_name)){
+                user ++;
+            }
+            
+        }
+        closedir (dir);
+        if (user == 0){
+            printf("허가된 사용자가 아닙니다!");
+            return;
+        }
+    }
+    printf("-----------------------------------------------\n");
+    printf("%s님이 입장하셨습니다\n ",ID);
 
-	printf("%s", dbpath);
 
     int pipes[2], pipes2[2], i, pid;
 
@@ -131,8 +146,9 @@ void catdb(char *ID)
           /* 파이프로부터 읽기 */
        read(pipes[0], buffer, SIZE);
 	   execlp("cat","cat",dbpath,NULL);
-       exit(0);
+       perror("사용자가 아닙니다 ");
        
     }
+    printf("\n-----------------------------------------------\n");
 }
 
