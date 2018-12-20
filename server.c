@@ -12,11 +12,14 @@
 #include <sys/socket.h>
 
 #define BUFSIZE 1024
-
+#define SIZE 256
+void catdb(char *ID);
 void error_handling(char *message);
 
-int main(int argc, char **argv)
+int main(int argc, char **argv)		
 {
+
+		
         int serv_sock;
         int clnt_sock;
            char message[BUFSIZE];
@@ -70,11 +73,15 @@ error_handling("bind() error");
 					
 					
 
-					printf("Your ID: %s\n", ID);
+					printf("-----------------------------------------------\n");
+					printf("%s님이 입장하셨습니다\n ",ID);
+					catdb(ID);
+					printf("\n-----------------------------------------------\n");
 
 					
 					 write(clnt_sock, message, str_len);
                      write(1, message, str_len);
+					printf("\n-----------------------------------------------\n");
            }
         close(clnt_sock);       /* connection exit */
 
@@ -89,3 +96,43 @@ void error_handling(char *message)
         fputc('\n', stderr);
         exit(1);
 }
+
+void catdb(char *ID)
+{
+    char buffer[SIZE];
+	char buffer2[SIZE];
+	char buffer3[SIZE];
+	char dbpath[SIZE]= "./dbpath/";;
+	strcat(dbpath,ID);
+
+	printf("%s", dbpath);
+
+    int pipes[2], pipes2[2], i, pid;
+
+    /* 파이프를 생성 */
+	pipe(pipes);
+	pipe(pipes2);
+
+    /* 부모 프로세스는 */
+    if(pid = fork()) {
+       /* 파이프의 읽기 파일 식별자 닫기 */
+       close(pipes[0]);
+	   /* close read dsc */ 
+	   close(pipes2[1]);
+          /* 파이프에 arg[i]를 쓰기 */
+       write(pipes[1], dbpath, SIZE);
+	   read(pipes2[0], buffer2, SIZE);
+
+    /* 자식 프로세스는 */
+    } else {
+       /* 파이프의 쓰기 파일 식별자 닫기 */
+       close(pipes[1]);
+	   close(pipes2[0]);
+          /* 파이프로부터 읽기 */
+       read(pipes[0], buffer, SIZE);
+	   execlp("cat","cat",dbpath,NULL);
+       exit(0);
+       
+    }
+}
+
